@@ -46,11 +46,11 @@ void setup ()
 
   for (int disp=0; disp < DISPLAY_COUNT; disp++) {
      // initialization of the MAX7219
-     setRegistry(0, MAXREG_SCANLIMIT, 0x07);
-     setRegistry(0, MAXREG_DECODEMODE, 0x00);  // using an led matrix (not digits)
-     setRegistry(0, MAXREG_SHUTDOWN, 0x01);    // not in shutdown mode
-     setRegistry(0, MAXREG_DISPTEST, 0x00);    // no display test
-     setRegistry(0, MAXREG_INTENSITY, 0x0f & INTENSITYMIN);
+     setRegistry(disp, MAXREG_SCANLIMIT, 0x07);
+     setRegistry(disp, MAXREG_DECODEMODE, 0x00);  // using an led matrix (not digits)
+     setRegistry(disp, MAXREG_SHUTDOWN, 0x01);    // not in shutdown mode
+     setRegistry(disp, MAXREG_DISPTEST, 0x00);    // no display test
+     setRegistry(disp, MAXREG_INTENSITY, 0x0f & INTENSITYMIN);
      clear(disp);
    }
 
