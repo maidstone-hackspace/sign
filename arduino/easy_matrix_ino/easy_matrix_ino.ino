@@ -1,5 +1,5 @@
 int ROWS = 8;         // number of rows on the matrix
-int DISPLAY_COUNT = 2;// how many max chips do we have connected
+int DISPLAY_COUNT = 3;// how many max chips do we have connected
 int MODE = 0;         // 0 = individual, 1=block when implemented
 int ANIMDELAY = 100;  // animation delay, deafault value is 100
 int INTENSITYMIN = 0; // minimum brightness, valid range [0,15]
@@ -24,13 +24,13 @@ String readString;
 
 
 void clear(int disp) {
-  for (int row=0; row < ROWS; row++) {
+  for (int row=1; row <= ROWS; row++) {
     setRegistry(disp, row, B00000000);
   }
 }
 
 void clearAll() {
-  for (int disp=0; disp < DISPLAY_COUNT; disp++) {
+  for (int disp=1; disp <= DISPLAY_COUNT; disp++) {
     clear(disp);
   }
 }
@@ -44,7 +44,7 @@ void setup ()
   pinMode(CLK_PIN, OUTPUT);
   pinMode(CS_PIN, OUTPUT);
 
-  for (int disp=0; disp < DISPLAY_COUNT; disp++) {
+  for (int disp=1; disp <= DISPLAY_COUNT; disp++) {
      // initialization of the MAX7219
      setRegistry(disp, MAXREG_SCANLIMIT, 0x07);
      setRegistry(disp, MAXREG_DECODEMODE, 0x00);  // using an led matrix (not digits)
@@ -57,25 +57,8 @@ void setup ()
 }
 
 
-int count = 0;
 void loop ()
 {
-  // second beat
-  //setRegistry(MAXREG_INTENSITY, 0x0f & INTENSITYMAX);
-  //delay(ANIMDELAY);
-  
-  // switch off
-  //setRegistry(MAXREG_INTENSITY, 0x0f & INTENSITYMIN);
-  //delay(ANIMDELAY);
-  
-  // second beat
-  //setRegistry(MAXREG_INTENSITY, 0x0f & INTENSITYMAX);
-  //delay(ANIMDELAY);
-  
-  // switch off
-  //setRegistry(MAXREG_INTENSITY, 0x0f & INTENSITYMIN);
-  //delay(ANIMDELAY*6);
-
     if (count > 64){
       //clear();
     }
@@ -89,36 +72,25 @@ void loop ()
       }
       
       setRegistry(byteDisp, byteRead, byteValue);
-      Serial.println(byteDisp);
-      //Serial.println(byteValue);
       Serial.println("ok");
-     count += 1;
     }
-
-  delay(5);
 }
 
 
 void setRegistry(byte targetDisplay, byte reg, byte value)
 {
   digitalWrite(CS_PIN, LOW);
-  
-  for(int disp=0;disp < DISPLAY_COUNT;disp++){
-    //Serial.println(disp);
+  for(int disp=1;disp <= DISPLAY_COUNT;disp++){
     if(disp == targetDisplay){
         putByte(reg);   // specify register
         putByte(value); // send data
         continue;
     }
-    
     putByte(0);   // specify register
     putByte(0); // send data
-  
   }
-
   digitalWrite(CS_PIN, LOW);
   digitalWrite(CS_PIN, HIGH);
-  //digitalWrite(CS_PIN, HIGH);
 }
 
 void putByte(byte data)
