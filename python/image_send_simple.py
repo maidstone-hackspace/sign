@@ -9,7 +9,7 @@ import time
 #dsrdtr setting this true will reset the arduino
 
 ser = serial.Serial(
-    port='/dev/ttyACM0',
+    port='/dev/ttyACM1',
     baudrate=115200,
     timeout=0,
     rtscts=True, dsrdtr=True
@@ -46,15 +46,16 @@ def drawColumn(column, data, display=1):
     print int(data, 2)
     ser.write(chr(display) + chr(column) + chr(int(data, 2)))
     s = ser.read(ser.inWaiting())
+    print 'return='
     print s
 
-def largeScroll(offset, data, display=1):
+def largeScroll(data, xoffset, yoffset=0, display=1, left=True):
     # draw each column send a byte of data to light up all 8 leds
     for column_step in range(0, 8): 
         print '--scroll--'
-        print offset
+        print xoffset
         # fetch the relevant byte fof data to send
-        data_byte = data_wrap(data, offset, column_step)
+        data_byte = data_wrap(data, xoffset, column_step, left)
         
         drawColumn(
             column=column_step + 1, 
@@ -71,26 +72,26 @@ def drawScroll(data, display=1):
     row = next(xpos)
 
 def drawImage(data, display=1):
-    for row in range(0, 8):
+    for column_step in range(0, 8):
         drawColumn(
-            column=row+1, 
-            data=data[row], 
+            column=column_step + 1, 
+            data=data[column_step], 
             display=display)
 
 def loadImage(filename):
+    """takes a greyscale png file"""
     im = Image.open(filename)
-    print im.mode
     im_array = np.array(im.convert('L'))
 
-    #~ print im_array
-    #~ print im_array[0][0]
-    #~ sys.exit()
     im_array[im_array < 128] = 1 # any value in the array greater than 128 change it to the value 1
     im_array[im_array > 128] = 0 # any value in the array greater than 128 change it to the value 1
     print im_array
     return formatImage(im_array.T)
 
-invader1 = loadImage('mhackspace.png')
+invader1 = loadImage('invader1.png')
+invader2 = loadImage('invader2.png')
+mhackspace = loadImage('mhackspace.png')
+mhackspace_multiline = loadImage('mhackspace_multiline.png')
 #~ invader2 = loadImage('invader2.png')
 #~ print invader1
 
@@ -113,34 +114,43 @@ def data_wrap(data, offset, column, left=True):
     
     if data_position < len(data):
         if left is True:
-            data_byte = ''
             data_byte = ''.join(
                 [data[data_position][char_pos % len(data)] for char_pos in range(0, 8)])
+        else : 
+            data_byte = ''.join(
+                [data[data_position][char_pos % len(data)] for char_pos in range(7, -1, -1)])
     return data_byte
 
 
-image_width = len(invader1)
+image_width = len(mhackspace_multiline)
+image_height = len(mhackspace_multiline[0])
 print image_width
+print image_height
 #~ sys.exit(1)
 matrix_offsets = []
 
-matrix_one = offsetter(0, image_width)
-matrix_two = offsetter(8, image_width)
-matrix_three = offsetter(16, image_width)
-
-while True:
-    #~ drawScroll(invader1, 1)
+# example image / animation
+#~ while True:
+for i in range(0, 6):
+    print 'test'
+    #~ drawImage(invader1, 1)
     #~ time.sleep(0.5)
-
-    #~ drawScroll(invader2, 1)
-    #~ time.sleep(0.5)
-
-    #~ for disp in range(0, 2):
-    #~ clear(0)
-    #~ clear(1)
     #~ drawImage(invader2, 1)
     #~ time.sleep(0.5)
-    
+    drawImage(invader1, 5)
+    #~ time.sleep(0.5)
+    #~ drawImage(invader2, 5)
+    #~ time.sleep(0.5)
+    sys.exit()
+
+matrix_one = offsetter(32, image_width)
+matrix_two = offsetter(24, image_width)
+matrix_three = offsetter(16, image_width)
+matrix_four = offsetter(8, image_width)
+matrix_five = offsetter(0, image_width)
+
+# display one is the last one in the chain
+while True:
     #~ largeScroll(next(matrix_one), invader1, 1)
     #~ largeScroll(next(matrix_two), invader1, 2)
     #~ largeScroll(next(matrix_three), invader1, 3)
@@ -148,9 +158,20 @@ while True:
     pos1 = next(matrix_one)
     pos2 = next(matrix_two)
     pos3 = next(matrix_three)
-    largeScroll(pos3, invader1, 1)
-    largeScroll(pos2, invader1, 2)
-    largeScroll(pos1, invader1, 3)
+    pos4 = next(matrix_four)
+    pos5 = next(matrix_five)
+    largeScroll(data=mhackspace, xoffset=pos1, display=1, left=False)
+    largeScroll(data=mhackspace, xoffset=pos2, display=2, left=False)
+    largeScroll(data=mhackspace, xoffset=pos3, display=3, left=False)
+    largeScroll(data=mhackspace, xoffset=pos4, display=4, left=False)
+    largeScroll(data=mhackspace, xoffset=pos5, display=5, left=False)
+    #~ largeScroll(data=mhackspace, xoffset=pos3, display=4, left=False)
+    #~ largeScroll(data=mhackspace, xoffset=pos3, display=5, left=False)
+    
+    #largeScroll(pos2, mhackspace, 2, False)
+    #largeScroll(pos1, mhackspace, 3, False)
+
+    #~ largeScroll(data=mhackspace_multiline, xoffset=pos3, yoffset=1, display=1, left=False)
 
     #~ drawScroll(invader2, 1)
     #~ drawScroll(invader2, 2)

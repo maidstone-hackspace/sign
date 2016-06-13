@@ -1,5 +1,5 @@
 int ROWS = 8;         // number of rows on the matrix
-int DISPLAY_COUNT = 3;// how many max chips do we have connected
+int DISPLAY_COUNT = 5;// how many max chips do we have connected
 int MODE = 0;         // 0 = individual, 1=block when implemented
 int ANIMDELAY = 100;  // animation delay, deafault value is 100
 int INTENSITYMIN = 0; // minimum brightness, valid range [0,15]
@@ -46,30 +46,41 @@ void setup ()
 
   for (int disp=1; disp <= DISPLAY_COUNT; disp++) {
      // initialization of the MAX7219
+     setRegistry(disp, MAXREG_DISPTEST, 0x01);    // no display test
      setRegistry(disp, MAXREG_SCANLIMIT, 0x07);
      setRegistry(disp, MAXREG_DECODEMODE, 0x00);  // using an led matrix (not digits)
+     setRegistry(disp, MAXREG_SHUTDOWN, 0x00);    // not in shutdown mode
      setRegistry(disp, MAXREG_SHUTDOWN, 0x01);    // not in shutdown mode
      setRegistry(disp, MAXREG_DISPTEST, 0x00);    // no display test
-     setRegistry(disp, MAXREG_INTENSITY, 0x0f & INTENSITYMIN);
-     clear(disp);
+     setRegistry(disp, MAXREG_INTENSITY, 0x0f & INTENSITYMIN);     clear(disp);
    }
 
 }
 
+void test (){
+  for (int disp=1; disp <= DISPLAY_COUNT; disp++) {
+      for (int row=0; row <= ROWS; row++) {
+        //for (int col=1; col <= 8; col++) {
+          setRegistry(disp, row, 255);
+        //}
+      }
+  }
+}
 
 void loop ()
 {
-    if (count > 64){
+  test();
+    //if (count > 64){
       //clear();
-    }
+    //}
 
    if(Serial.available() > 2) {
       byteDisp = Serial.read();
       byteRead = Serial.read();
       byteValue = Serial.read();
-      if(byteRead==0){
-        clear(byteDisp);
-      }
+      //if(byteRead==0){
+      //  clear(byteDisp);
+      //}
       
       setRegistry(byteDisp, byteRead, byteValue);
       Serial.println("ok");
@@ -84,10 +95,11 @@ void setRegistry(byte targetDisplay, byte reg, byte value)
     if(disp == targetDisplay){
         putByte(reg);   // specify register
         putByte(value); // send data
-        continue;
+    }else{
+        putByte(B00000000);   // specify register
+        putByte(B00000000); // send data
     }
-    putByte(0);   // specify register
-    putByte(0); // send data
+
   }
   digitalWrite(CS_PIN, LOW);
   digitalWrite(CS_PIN, HIGH);
