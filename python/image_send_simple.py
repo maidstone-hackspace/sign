@@ -10,9 +10,6 @@ import time
 #save as a greyscale png 8x8 pixels, test image made in GIMP
 #dsrdtr setting this true will reset the arduino
 
-#~ font = ImageFont.truetype("Arial.ttf",8)
-#~ img=Image.new("L", (8, 64))
-
 ser = serial.Serial(
     port='/dev/ttyACM0',
     baudrate=115200,
@@ -27,9 +24,9 @@ time.sleep(5)
 
 
 #convert the array to an array with the strings concatenated
-def formatImage(im):
+def formatImage(image_array):
     result = []
-    for row in im:
+    for row in image_array:
         result.append(''.join([str(num) for num in row]))
     return result
 
@@ -38,7 +35,7 @@ def clear(display=1):
     s = ser.read(ser.inWaiting())
 
 def drawColumn(column, data, display=1):
-    ser.write(chr(display) + chr(column) + chr(int(data, 2)))
+    ser.write(chr(display) + chr(column) + chr(int(data[0:8], 2)))
     s = ser.read(ser.inWaiting())
 
 def largeScroll(data, xoffset, yoffset=0, display=1, left=True):
@@ -53,12 +50,25 @@ def largeScroll(data, xoffset, yoffset=0, display=1, left=True):
             display=display)
 
 
-def drawImage(data, display=1):
+def drawImage(data, offset=0, display=1):
     for column_step in range(0, 8):
         drawColumn(
             column=column_step + 1, 
-            data=data[column_step], 
+            data=data[column_step + offset], 
             display=display)
+
+def image_to_array(im):
+    """file to load, must be a greyscale png
+    Args:
+      filename (string): filename of the image to load
+    Returns:
+      list: image data converted to a list"""
+    im_array = np.array(im.convert('L'))
+
+    im_array[im_array < 128] = 1 # any value in the array greater than 128 change it to the value 1
+    im_array[im_array > 128] = 0 # any value in the array greater than 128 change it to the value 1
+    print im_array
+    return formatImage(im_array.T)
 
 def loadImage(filename):
     """file to load, must be a greyscale png
@@ -67,12 +77,15 @@ def loadImage(filename):
     Returns:
       list: image data converted to a list"""
     im = Image.open(filename)
-    im_array = np.array(im.convert('L'))
+    return image_to_array(im)
 
-    im_array[im_array < 128] = 1 # any value in the array greater than 128 change it to the value 1
-    im_array[im_array > 128] = 0 # any value in the array greater than 128 change it to the value 1
-    print im_array
-    return formatImage(im_array.T)
+def loadText(text, bgcol=(0,0,0), fgcol=(255,255,255)):
+    font = ImageFont.truetype("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf",8)
+    img = Image.new("L", (64, 8), bgcol)
+    draw = ImageDraw.Draw(img)
+    text_image = draw.text((0, 0), text, fgcol, font=font)
+    img.save('test.png')
+    return image_to_array(img)
 
 
 mhackspace = loadImage('mhackspace.png')
@@ -125,18 +138,39 @@ image_width = len(mhackspace_multiline)
 image_height = len(mhackspace_multiline[0])
 matrix_offsets = []
 
-# example image / animation
-def space_invader_animate():
-    invader1 = loadImage('invader1.png')
-    invader2 = loadImage('invader2.png')
-    #loop a few times for the animation
+mytext = loadText('HELLO')
+
+# example rendering / font
+def font_test(text_image):
     for i in range(0, 6):
-        drawImage(invader1, 1)
-        time.sleep(0.5)
-        drawImage(invader2, 1)
+        drawImage(mytext, 0, 1)
+        drawImage(mytext, 8, 2)
+        drawImage(mytext, 16, 3)
+        drawImage(mytext, 24, 4)
+        drawImage(mytext, 32, 5)
         time.sleep(0.5)
 
-def scroll_image_example():
+
+# example image / animation
+def space_invader_animate(image_list):
+    #loop a few times for the animation
+    for i in range(0, 6):
+        for image in image_list:
+            drawImage(image, display=1)
+            time.sleep(0.5)
+
+
+def scroll_image_example(image_data):
+    matrix_stepper = offsetter(start_pos=-8, width=image_width, loop=False)
+    while True:
+        d=1
+        pos = next(matrix_stepper)
+        for display in range(5, 0, -1):
+            offset = pos + (display - 1) * 8
+            largeScroll(data=image_data, xoffset=offset, display=d, left=False)
+            d += 1
+
+def scroll_pipes():
     matrix_stepper = offsetter(start_pos=-8, width=image_width, loop=False)
     while True:
         d=1
@@ -146,8 +180,12 @@ def scroll_image_example():
             largeScroll(data=mhackspace, xoffset=offset, display=d, left=False)
             d += 1
 
-space_invader_animate()
-scroll_image_example()
+invader1 = loadImage('invader1.png')
+invader2 = loadImage('invader2.png')
+
+font_test(mytext)
+space_invader_animate([invader1, invader2])
+scroll_image_example(mhackspace)
 
 #~ largeScroll(data=mhackspace_multiline, xoffset=pos3, yoffset=1, display=1, left=False)
 
